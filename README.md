@@ -1,8 +1,8 @@
-# Skupper Hello World
+# Skupper FTP
 
 [![main](https://github.com/skupperproject/skewer/actions/workflows/main.yaml/badge.svg)](https://github.com/skupperproject/skewer/actions/workflows/main.yaml)
 
-#### A minimal HTTP application deployed across Kubernetes clusters using Skupper
+#### XXX
 
 This example is part of a [suite of examples][examples] showing the
 different ways you can use [Skupper][website] to connect services
@@ -21,33 +21,15 @@ across cloud providers, data centers, and edge sites.
 * [Step 4: Install Skupper in your namespaces](#step-4-install-skupper-in-your-namespaces)
 * [Step 5: Check the status of your namespaces](#step-5-check-the-status-of-your-namespaces)
 * [Step 6: Link your namespaces](#step-6-link-your-namespaces)
-* [Step 7: Deploy the frontend and backend services](#step-7-deploy-the-frontend-and-backend-services)
-* [Step 8: Expose the backend service](#step-8-expose-the-backend-service)
-* [Step 9: Expose the frontend service](#step-9-expose-the-frontend-service)
-* [Step 10: Test the application](#step-10-test-the-application)
-* [Summary](#summary)
+* [Step 7: Deploy the FTP service](#step-7-deploy-the-ftp-service)
+* [Step 8: Expose the FTP service](#step-8-expose-the-ftp-service)
+* [Step 9: Test the FTP service](#step-9-test-the-ftp-service)
 * [Cleaning up](#cleaning-up)
 * [Next steps](#next-steps)
 
 ## Overview
 
-This example is a very simple multi-service HTTP application that can
-be deployed across multiple Kubernetes clusters using Skupper.
-
-It contains two services:
-
-* A backend service that exposes an `/api/hello` endpoint.  It
-  returns greetings of the form `Hello from <pod-name>
-  (<request-count>)`.
-
-* A frontend service that accepts HTTP requests, calls the backend
-  to fetch new greetings, and serves them to the user.
-
-With Skupper, you can place the backend in one cluster and the
-frontend in another and maintain connectivity between the two
-services without exposing the backend to the public internet.
-
-<img src="images/entities.svg" width="640"/>
+XXX
 
 ## Prerequisites
 
@@ -212,119 +194,36 @@ skupper link status --wait 30
 If your console sessions are on different machines, you may need to
 use `scp` or a similar tool to transfer the token.
 
-## Step 7: Deploy the frontend and backend services
+## Step 7: Deploy the FTP service
 
-Use `kubectl create deployment` to deploy the frontend service
-in `west` and the backend service in `east`.
-
-Console for _west_:
-
-~~~ shell
-kubectl create deployment hello-world-frontend --image quay.io/skupper/hello-world-frontend
-~~~
+XXX
 
 Console for _east_:
 
 ~~~ shell
-kubectl create deployment hello-world-backend --image quay.io/skupper/hello-world-backend
+kubectl apply -f ftp-service
 ~~~
 
-## Step 8: Expose the backend service
+## Step 8: Expose the FTP service
 
-We now have two namespaces linked to form a Skupper network, but
-no services are exposed on it.  Skupper uses the `skupper
-expose` command to select a service from one namespace for
-exposure on all the linked namespaces.
-
-Use `skupper expose` to expose the backend service to the
-frontend service.
+XXX
 
 Console for _east_:
 
 ~~~ shell
-skupper expose deployment/hello-world-backend --port 8080
+skupper expose deployment/ftp-service --port 2020 --port 2121
 ~~~
 
-Sample output:
+## Step 9: Test the FTP service
 
-~~~
-NAME                   TYPE           CLUSTER-IP       EXTERNAL-IP      PORT(S)          AGE
-hello-world-backend    ClusterIP      10.106.92.175    <none>           8080/TCP         1m31s
-~~~
-
-## Step 9: Expose the frontend service
-
-We have established connectivity between the two namespaces and
-made the backend in `east` available to the frontend in `west`.
-Before we can test the application, we need external access to
-the frontend.
-
-Use `kubectl expose` with `--type LoadBalancer` to open network
-access to the frontend service.  Use `kubectl get services` to
-check for the service and its external IP address.
+XXX
 
 Console for _west_:
 
 ~~~ shell
-kubectl expose deployment/hello-world-frontend --port 8080 --type LoadBalancer
-kubectl get services
+kubectl run ftp-put --rm -it --image=docker.io/curlimages/curl -- -T /etc/services ftp://example:example@ftp-service:2121
+kubectl run ftp-get --rm -it --image=docker.io/curlimages/curl -- ftp://example:example@ftp-service:2121/services
 ~~~
-
-Sample output:
-
-~~~
-$ kubectl expose deployment/hello-world-frontend --port 8080 --type LoadBalancer
-service/hello-world-frontend exposed
-
-$ kubectl get services
-NAME                   TYPE           CLUSTER-IP       EXTERNAL-IP      PORT(S)                           AGE
-hello-world-backend    ClusterIP      10.102.112.121   <none>           8080/TCP                          30s
-hello-world-frontend   LoadBalancer   10.98.170.106    10.98.170.106    8080:30787/TCP                    2s
-skupper                LoadBalancer   10.101.101.208   10.101.101.208   8080:31494/TCP                    82s
-skupper-router         LoadBalancer   10.110.252.252   10.110.252.252   55671:32111/TCP,45671:31193/TCP   86s
-skupper-router-local   ClusterIP      10.96.123.13     <none>           5671/TCP                          86s
-~~~
-
-## Step 10: Test the application
-
-Look up the external URL and use `curl` to send a request.
-
-Console for _west_:
-
-~~~ shell
-curl $(kubectl get service hello-world-frontend -o jsonpath='http://{.status.loadBalancer.ingress[0].ip}:8080/')
-~~~
-
-Sample output:
-
-~~~
-I am the frontend.  The backend says 'Hello from hello-world-backend-869cd94f69-wh6zt (1)'.
-~~~
-
-**Note:** If the embedded `kubectl get` command fails to get the
-IP address, you can find it manually by running `kubectl get
-services` and looking up the external IP of the
-`hello-world-frontend` service.
-
-## Summary
-
-This example locates the frontend and backend services in different
-namespaces, on different clusters.  Ordinarily, this means that they
-have no way to communicate unless they are exposed to the public
-internet.
-
-Introducing Skupper into each namespace allows us to create a virtual
-application network that can connect services in different clusters.
-Any service exposed on the application network is represented as a
-local service in all of the linked namespaces.
-
-The backend service is located in `east`, but the frontend service
-in `west` can "see" it as if it were local.  When the frontend
-sends a request to the backend, Skupper forwards the request to the
-namespace where the backend is running and routes the response back to
-the frontend.
-
-<img src="images/sequence.svg" width="640"/>
 
 ## Cleaning up
 
@@ -335,15 +234,13 @@ Console for _west_:
 
 ~~~ shell
 skupper delete
-kubectl delete service/hello-world-frontend
-kubectl delete deployment/hello-world-frontend
 ~~~
 
 Console for _east_:
 
 ~~~ shell
 skupper delete
-kubectl delete deployment/hello-world-backend
+kubectl delete deployment/ftp-service
 ~~~
 
 ## Next steps
