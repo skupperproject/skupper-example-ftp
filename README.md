@@ -201,7 +201,7 @@ XXX
 Console for _east_:
 
 ~~~ shell
-kubectl apply -f ftp-service
+kubectl apply -f ftp-service.yaml
 ~~~
 
 ## Step 8: Expose the FTP service

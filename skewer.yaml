@@ -67,7 +67,7 @@ steps:
       XXX
     commands:
       east:
-        - run: kubectl apply -f ftp-service
+        - run: kubectl apply -f ftp-service.yaml
           await: [deployment/ftp-service]
   - title: Expose the FTP service
     preamble: |
