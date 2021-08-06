@@ -22,8 +22,6 @@ spec:
               value: example
             - name: FTP_PASS
               value: example
-            - name: PASV_ADDRESS
-              value: localhost
             - name: PASV_MIN_PORT
               value: "2020"
             - name: PASV_MAX_PORT
@@ -53,6 +51,6 @@ spec:
 #   selector:
 #     app: ftp-service
 #   type: LoadBalancer
-
+#
 # kc run ftp-put --rm -it --image=docker.io/curlimages/curl -- -T /etc/services ftp://example:example@ftp-service:2121
 # kc run ftp-get --rm -it --image=docker.io/curlimages/curl -- ftp://example:example@ftp-service:2121/services

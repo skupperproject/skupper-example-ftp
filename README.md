@@ -2,8 +2,6 @@
 
 [![main](https://github.com/skupperproject/skewer/actions/workflows/main.yaml/badge.svg)](https://github.com/skupperproject/skewer/actions/workflows/main.yaml)
 
-#### XXX
-
 This example is part of a [suite of examples][examples] showing the
 different ways you can use [Skupper][website] to connect services
 across cloud providers, data centers, and edge sites.
@@ -13,7 +11,6 @@ across cloud providers, data centers, and edge sites.
 
 #### Contents
 
-* [Overview](#overview)
 * [Prerequisites](#prerequisites)
 * [Step 1: Configure separate console sessions](#step-1-configure-separate-console-sessions)
 * [Step 2: Log in to your clusters](#step-2-log-in-to-your-clusters)
@@ -26,10 +23,6 @@ across cloud providers, data centers, and edge sites.
 * [Step 9: Test the FTP service](#step-9-test-the-ftp-service)
 * [Cleaning up](#cleaning-up)
 * [Next steps](#next-steps)
-
-## Overview
-
-XXX
 
 ## Prerequisites
 
@@ -196,8 +189,6 @@ use `scp` or a similar tool to transfer the token.
 
 ## Step 7: Deploy the FTP service
 
-XXX
-
 Console for _east_:
 
 ~~~ shell
@@ -206,8 +197,6 @@ kubectl apply -f ftp-service.yaml
 
 ## Step 8: Expose the FTP service
 
-XXX
-
 Console for _east_:
 
 ~~~ shell
@@ -215,8 +204,6 @@ skupper expose deployment/ftp-service --port 2020 --port 2121
 ~~~
 
 ## Step 9: Test the FTP service
-
-XXX
 
 Console for _west_:
 
