@@ -67,8 +67,13 @@ steps:
   - title: Expose the FTP service
     commands:
       east:
-        - run: skupper expose deployment/ftp-service --port 2020 --port 2121
+        # Only the first has an effect
+        - run: skupper expose deployment/ftp-service --port 2020
+        - run: skupper expose deployment/ftp-service --port 2121
           sleep: 30
+        # Also tried:
+        # - run: skupper expose deployment/ftp-service --port 2020 --port 2121
+        # It let's me try, and only the latter port is in effect
   - title: Test the FTP service
     commands:
       west:
