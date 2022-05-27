@@ -1,0 +1,33 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ftp-server
+  labels:
+    app: ftp-server
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: ftp-server
+  template:
+    metadata:
+      labels:
+        app: ftp-server
+    spec:
+      containers:
+        - name: ftp-server
+          image: docker.io/fauria/vsftpd
+          env:
+            - name: FTP_USER
+              value: example
+            - name: FTP_PASS
+              value: example
+            - name: PASV_MIN_PORT
+              value: "21100"
+            - name: PASV_MAX_PORT
+              value: "21100"
+            - name: LOG_STDOUT
+              value: "1"
+          ports:
+            - containerPort: 2020
+            - containerPort: 21
