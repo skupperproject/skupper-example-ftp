@@ -2,6 +2,8 @@
 
 [![main](https://github.com/ssorj/skupper-example-ftp/actions/workflows/main.yaml/badge.svg)](https://github.com/ssorj/skupper-example-ftp/actions/workflows/main.yaml)
 
+#### Securely connect to an FTP server on a remote Kubernetes cluster
+
 
 This example is part of a [suite of examples][examples] showing the
 different ways you can use [Skupper][website] to connect services
@@ -13,6 +15,7 @@ across cloud providers, data centers, and edge sites.
 
 #### Contents
 
+* [Overview](#overview)
 * [Prerequisites](#prerequisites)
 * [Step 1: Configure separate console sessions](#step-1-configure-separate-console-sessions)
 * [Step 2: Access your clusters](#step-2-access-your-clusters)
@@ -25,6 +28,11 @@ across cloud providers, data centers, and edge sites.
 * [Step 9: Test the FTP server](#step-9-test-the-ftp-server)
 * [Accessing the web console](#accessing-the-web-console)
 * [Cleaning up](#cleaning-up)
+
+## Overview
+
+This is a simple illustration of an FTP client on one Kubernetes
+cluster connecting to an FTP server on another.
 
 ## Prerequisites
 
@@ -260,13 +268,26 @@ creation.
 
 ## Step 7: Deploy the FTP server
 
+In the east namespace, use `kubectl apply` to deploy the FTP
+server.
+
 _**Console for east:**_
 
 ~~~ shell
 kubectl apply -f ftp-server
 ~~~
 
+_Sample output:_
+
+~~~ console
+$ kubectl apply -f ftp-server
+deployment.apps/ftp-server created
+~~~
+
 ## Step 8: Expose the FTP server
+
+In the east namespace, use `skupper expose` to expose the FTP
+server on all linked sites.
 
 _**Console for east:**_
 
@@ -274,13 +295,39 @@ _**Console for east:**_
 skupper expose deployment/ftp-server --port 21100 --port 2121 --target-port 21100 --target-port 21
 ~~~
 
+_Sample output:_
+
+~~~ console
+$ skupper expose deployment/ftp-server --port 21100 --port 2121 --target-port 21100 --target-port 21
+deployment ftp-server exposed as ftp-server
+~~~
+
 ## Step 9: Test the FTP server
+
+In the west namespace, use `kubectl run` and the `curl` image to
+perform FTP put and get operations.
 
 _**Console for west:**_
 
 ~~~ shell
 kubectl run ftp-put --attach --rm --image=docker.io/curlimages/curl --restart=Never -- -T /etc/os-release ftp://example:example@ftp-server:2121
 kubectl run ftp-get --attach --rm --image=docker.io/curlimages/curl --restart=Never -- ftp://example:example@ftp-server:2121/os-release
+~~~
+
+_Sample output:_
+
+~~~ console
+$ kubectl run ftp-put --attach --rm --image=docker.io/curlimages/curl --restart=Never -- -T /etc/os-release ftp://example:example@ftp-server:2121
+pod "ftp-put" deleted
+
+$ kubectl run ftp-get --attach --rm --image=docker.io/curlimages/curl --restart=Never -- ftp://example:example@ftp-server:2121/os-release
+NAME="Alpine Linux"
+ID=alpine
+VERSION_ID=3.15.4
+PRETTY_NAME="Alpine Linux v3.15"
+HOME_URL="https://alpinelinux.org/"
+BUG_REPORT_URL="https://bugs.alpinelinux.org/"
+pod "ftp-get" deleted
 ~~~
 
 ## Accessing the web console
