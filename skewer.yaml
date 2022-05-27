@@ -1,9 +1,9 @@
 title: Accessing an FTP server using Skupper
 subtitle: Securely connect to an FTP server on a remote Kubernetes cluster
-github_actions_url: https://github.com/ssorj/skupper-example-ftp/actions/workflows/main.yaml
+github_actions_url: https://github.com/skupperproject/skupper-example-ftp/actions/workflows/main.yaml
 overview: |
-  This is a simple illustration of an FTP client on one Kubernetes
-  cluster connecting to an FTP server on another.
+  This example shows you how you can use Skupper to connect an FTP
+  client on one Kubernetes cluster to an FTP server on another.
 sites:
   west:
     kubeconfig: ~/.kube/config-west
@@ -35,7 +35,7 @@ steps:
         - await: deployment/ftp-server
         - run: skupper expose deployment/ftp-server --port 21100 --port 2121 --target-port 21100 --target-port 21
           output: deployment ftp-server exposed as ftp-server
-  - title: Test the FTP server
+  - title: Run the FTP client
     preamble: |
       In the west namespace, use `kubectl run` and the `curl` image to
       perform FTP put and get operations.
