@@ -4,6 +4,12 @@ github_actions_url: https://github.com/skupperproject/skupper-example-ftp/action
 overview: |
   This example shows you how you can use Skupper to connect an FTP
   client on one Kubernetes cluster to an FTP server on another.
+
+  It demonstrates use of Skupper with multi-port services such as FTP.
+  It uses FTP in passive mode (which is more typical these days) and a
+  [restricted port range][ports] that plays better with Skupper.
+
+  [ports]: https://github.com/skupperproject/skupper-example-ftp/blob/main/ftp-server/kubernetes.yaml#L25-L28
 sites:
   west:
     kubeconfig: ~/.kube/config-west
@@ -30,14 +36,10 @@ steps:
     preamble: |
       In the east namespace, use `skupper expose` to expose the FTP
       server on all linked sites.
-
-      The port arguments below map exported port 2121 to target port
-      21.  (The redundant 21100-to-21100 mapping is there because the
-      arguments must have correlated positions.)
     commands:
       east:
         - await: deployment/ftp-server
-        - run: skupper expose deployment/ftp-server --port 21100 --port 2121 --target-port 21100 --target-port 21
+        - run: skupper expose deployment/ftp-server --port 21100 --port 21
           output: deployment ftp-server exposed as ftp-server
   - title: Run the FTP client
     preamble: |
@@ -46,9 +48,9 @@ steps:
     commands:
       west:
         - await: service/ftp-server
-        - run: echo "Hello!" | kubectl run ftp-client --stdin --rm --image=docker.io/curlimages/curl --restart=Never -- -s -T - ftp://example:example@ftp-server:2121/greeting
+        - run: echo "Hello!" | kubectl run ftp-client --stdin --rm --image=docker.io/curlimages/curl --restart=Never -- -s -T - ftp://example:example@ftp-server/greeting
           output: pod "ftp-client" deleted
-        - run: kubectl run ftp-client --attach --rm --image=docker.io/curlimages/curl --restart=Never -- -s ftp://example:example@ftp-server:2121/greeting
+        - run: kubectl run ftp-client --attach --rm --image=docker.io/curlimages/curl --restart=Never -- -s ftp://example:example@ftp-server/greeting
           output: |
             Hello!
             pod "ftp-client" deleted

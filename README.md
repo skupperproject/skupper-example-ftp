@@ -34,6 +34,12 @@ across cloud providers, data centers, and edge sites.
 This example shows you how you can use Skupper to connect an FTP
 client on one Kubernetes cluster to an FTP server on another.
 
+It demonstrates use of Skupper with multi-port services such as FTP.
+It uses FTP in passive mode (which is more typical these days) and a
+[restricted port range][ports] that plays better with Skupper.
+
+[ports]: https://github.com/skupperproject/skupper-example-ftp/blob/main/ftp-server/kubernetes.yaml#L25-L28
+
 ## Prerequisites
 
 
@@ -289,20 +295,16 @@ deployment.apps/ftp-server created
 In the east namespace, use `skupper expose` to expose the FTP
 server on all linked sites.
 
-The port arguments below map exported port 2121 to target port
-21.  (The redundant 21100-to-21100 mapping is there because the
-arguments must have correlated positions.)
-
 _**Console for east:**_
 
 ~~~ shell
-skupper expose deployment/ftp-server --port 21100 --port 2121 --target-port 21100 --target-port 21
+skupper expose deployment/ftp-server --port 21100 --port 21
 ~~~
 
 _Sample output:_
 
 ~~~ console
-$ skupper expose deployment/ftp-server --port 21100 --port 2121 --target-port 21100 --target-port 21
+$ skupper expose deployment/ftp-server --port 21100 --port 21
 deployment ftp-server exposed as ftp-server
 ~~~
 
@@ -314,17 +316,17 @@ perform FTP put and get operations.
 _**Console for west:**_
 
 ~~~ shell
-echo "Hello!" | kubectl run ftp-client --stdin --rm --image=docker.io/curlimages/curl --restart=Never -- -s -T - ftp://example:example@ftp-server:2121/greeting
-kubectl run ftp-client --attach --rm --image=docker.io/curlimages/curl --restart=Never -- -s ftp://example:example@ftp-server:2121/greeting
+echo "Hello!" | kubectl run ftp-client --stdin --rm --image=docker.io/curlimages/curl --restart=Never -- -s -T - ftp://example:example@ftp-server/greeting
+kubectl run ftp-client --attach --rm --image=docker.io/curlimages/curl --restart=Never -- -s ftp://example:example@ftp-server/greeting
 ~~~
 
 _Sample output:_
 
 ~~~ console
-$ echo "Hello!" | kubectl run ftp-client --stdin --rm --image=docker.io/curlimages/curl --restart=Never -- -s -T - ftp://example:example@ftp-server:2121/greeting
+$ echo "Hello!" | kubectl run ftp-client --stdin --rm --image=docker.io/curlimages/curl --restart=Never -- -s -T - ftp://example:example@ftp-server/greeting
 pod "ftp-client" deleted
 
-$ kubectl run ftp-client --attach --rm --image=docker.io/curlimages/curl --restart=Never -- -s ftp://example:example@ftp-server:2121/greeting
+$ kubectl run ftp-client --attach --rm --image=docker.io/curlimages/curl --restart=Never -- -s ftp://example:example@ftp-server/greeting
 Hello!
 pod "ftp-client" deleted
 ~~~
