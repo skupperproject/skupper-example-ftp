@@ -36,7 +36,8 @@ client on one Kubernetes cluster to an FTP server on another.
 
 It demonstrates use of Skupper with multi-port services such as FTP.
 It uses FTP in passive mode (which is more typical these days) and a
-[restricted port range][ports] that plays better with Skupper.
+[restricted port range][ports] that simplifies Skupper
+configuration.
 
 [ports]: https://github.com/skupperproject/skupper-example-ftp/blob/main/ftp-server/kubernetes.yaml#L25-L28
 
