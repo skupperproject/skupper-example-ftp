@@ -289,6 +289,10 @@ deployment.apps/ftp-server created
 In the east namespace, use `skupper expose` to expose the FTP
 server on all linked sites.
 
+The port arguments below map exported port 2121 to target port
+21.  (The redundant 21100-to-21100 mapping is there because the
+arguments must have correlated positions.)
+
 _**Console for east:**_
 
 ~~~ shell
@@ -310,24 +314,19 @@ perform FTP put and get operations.
 _**Console for west:**_
 
 ~~~ shell
-kubectl run ftp-put --attach --rm --image=docker.io/curlimages/curl --restart=Never -- -T /etc/os-release ftp://example:example@ftp-server:2121
-kubectl run ftp-get --attach --rm --image=docker.io/curlimages/curl --restart=Never -- ftp://example:example@ftp-server:2121/os-release
+echo "Hello!" | kubectl run ftp-client --stdin --rm --image=docker.io/curlimages/curl --restart=Never -- -s -T - ftp://example:example@ftp-server:2121/greeting
+kubectl run ftp-client --attach --rm --image=docker.io/curlimages/curl --restart=Never -- -s ftp://example:example@ftp-server:2121/greeting
 ~~~
 
 _Sample output:_
 
 ~~~ console
-$ kubectl run ftp-put --attach --rm --image=docker.io/curlimages/curl --restart=Never -- -T /etc/os-release ftp://example:example@ftp-server:2121
-pod "ftp-put" deleted
+$ echo "Hello!" | kubectl run ftp-client --stdin --rm --image=docker.io/curlimages/curl --restart=Never -- -s -T - ftp://example:example@ftp-server:2121/greeting
+pod "ftp-client" deleted
 
-$ kubectl run ftp-get --attach --rm --image=docker.io/curlimages/curl --restart=Never -- ftp://example:example@ftp-server:2121/os-release
-NAME="Alpine Linux"
-ID=alpine
-VERSION_ID=3.15.4
-PRETTY_NAME="Alpine Linux v3.15"
-HOME_URL="https://alpinelinux.org/"
-BUG_REPORT_URL="https://bugs.alpinelinux.org/"
-pod "ftp-get" deleted
+$ kubectl run ftp-client --attach --rm --image=docker.io/curlimages/curl --restart=Never -- -s ftp://example:example@ftp-server:2121/greeting
+Hello!
+pod "ftp-client" deleted
 ~~~
 
 ## Accessing the web console
