@@ -1,6 +1,8 @@
+<!-- NOTE: This file is generated from skewer.yaml.  Do not edit it directly. -->
+
 # Accessing an FTP server using Skupper
 
-[![main](https://github.com/skupperproject/skupper-example-ftp/actions/workflows/main.yaml/badge.svg)](https://github.com/skupperproject/skupper-example-ftp/actions/workflows/main.yaml)
+[![main](https://github.com/lynnemorrison/skupper-example-ftp/actions/workflows/main.yaml/badge.svg)](https://github.com/lynnemorrison/skupper-example-ftp/actions/workflows/main.yaml)
 
 #### Securely connect to an FTP server on a remote Kubernetes cluster
 
@@ -16,14 +18,15 @@ across cloud providers, data centers, and edge sites.
 * [Overview](#overview)
 * [Prerequisites](#prerequisites)
 * [Step 1: Install the Skupper command-line tool](#step-1-install-the-skupper-command-line-tool)
-* [Step 2: Set up your namespaces](#step-2-set-up-your-namespaces)
-* [Step 3: Deploy the FTP server](#step-3-deploy-the-ftp-server)
+* [Step 2: Access your Kubernetes clusters](#step-2-access-your-kubernetes-clusters)
+* [Step 3: Install Skupper on your Kubernetes clusters](#step-3-install-skupper-on-your-kubernetes-clusters)
 * [Step 4: Create your sites](#step-4-create-your-sites)
 * [Step 5: Link your sites](#step-5-link-your-sites)
-* [Step 6: Expose the FTP server](#step-6-expose-the-ftp-server)
-* [Step 7: Run the FTP client](#step-7-run-the-ftp-client)
-* [Cleaning up](#cleaning-up)
-* [Summary](#summary)
+* [Step 6: Deploy the FTP server](#step-6-deploy-the-ftp-server)
+* [Step 7: Expose the FTP server to the Virtual Application Network](#step-7-expose-the-ftp-server-to-the-virtual-application-network)
+* [Step 8: Run the FTP client for put operation](#step-8-run-the-ftp-client-for-put-operation)
+* [Step 9: Run the FTP client for get operation](#step-9-run-the-ftp-client-for-get-operation)
+* [Step 10: Cleaning Up](#step-10-cleaning-up)
 * [Next steps](#next-steps)
 * [About this example](#about-this-example)
 
@@ -41,26 +44,26 @@ configuration.
 
 ## Prerequisites
 
-* The `kubectl` command-line tool, version 1.15 or later
-  ([installation guide][install-kubectl])
-
 * Access to at least one Kubernetes cluster, from [any provider you
-  choose][kube-providers]
+  choose][kube-providers].
 
-[install-kubectl]: https://kubernetes.io/docs/tasks/tools/install-kubectl/
+* The `kubectl` command-line tool, version 1.15 or later
+  ([installation guide][install-kubectl]).
+
 [kube-providers]: https://skupper.io/start/kubernetes.html
+[install-kubectl]: https://kubernetes.io/docs/tasks/tools/install-kubectl/
 
 ## Step 1: Install the Skupper command-line tool
 
-This example uses the Skupper command-line tool to deploy Skupper.
-You need to install the `skupper` command only once for each
-development environment.
+This example uses the Skupper command-line tool to create Skupper
+resources.  You need to install the `skupper` command only once
+for each development environment.
 
 On Linux or Mac, you can use the install script (inspect it
 [here][install-script]) to download and extract the command:
 
 ~~~ shell
-curl https://skupper.io/install.sh | sh
+curl https://skupper.io/install.sh | sh -s -- --version 2.0.0
 ~~~
 
 The script installs the command under your home directory.  It
@@ -72,43 +75,27 @@ Skupper][install-docs].
 [install-script]: https://github.com/skupperproject/skupper-website/blob/main/input/install.sh
 [install-docs]: https://skupper.io/install/
 
-## Step 2: Set up your namespaces
+## Step 2: Access your Kubernetes clusters
 
-Skupper is designed for use with multiple Kubernetes namespaces,
-usually on different clusters.  The `skupper` and `kubectl`
-commands use your [kubeconfig][kubeconfig] and current context to
-select the namespace where they operate.
+Skupper is designed for use with multiple Kubernetes clusters.
+The `skupper` and `kubectl` commands use your
+[kubeconfig][kubeconfig] and current context to select the cluster
+and namespace where they operate.
 
 [kubeconfig]: https://kubernetes.io/docs/concepts/configuration/organize-cluster-access-kubeconfig/
 
-Your kubeconfig is stored in a file in your home directory.  The
-`skupper` and `kubectl` commands use the `KUBECONFIG` environment
-variable to locate it.
+This example uses multiple cluster contexts at once. The
+`KUBECONFIG` environment variable tells `skupper` and `kubectl`
+which kubeconfig to use.
 
-A single kubeconfig supports only one active context per user.
-Since you will be using multiple contexts at once in this
-exercise, you need to create distinct kubeconfigs.
-
-For each namespace, open a new terminal window.  In each terminal,
+For each cluster, open a new terminal window.  In each terminal,
 set the `KUBECONFIG` environment variable to a different path and
-log in to your cluster.  Then create the namespace you wish to use
-and set the namespace on your current context.
-
-**Note:** The login procedure varies by provider.  See the
-documentation for yours:
-
-* [Minikube](https://skupper.io/start/minikube.html#cluster-access)
-* [Amazon Elastic Kubernetes Service (EKS)](https://skupper.io/start/eks.html#cluster-access)
-* [Azure Kubernetes Service (AKS)](https://skupper.io/start/aks.html#cluster-access)
-* [Google Kubernetes Engine (GKE)](https://skupper.io/start/gke.html#cluster-access)
-* [IBM Kubernetes Service](https://skupper.io/start/ibmks.html#cluster-access)
-* [OpenShift](https://skupper.io/start/openshift.html#cluster-access)
+log in to your cluster.
 
 _**Public:**_
 
 ~~~ shell
 export KUBECONFIG=~/.kube/config-public
-# Enter your provider-specific login command
 kubectl create namespace public
 kubectl config set-context --current --namespace public
 ~~~
@@ -117,26 +104,31 @@ _**Private:**_
 
 ~~~ shell
 export KUBECONFIG=~/.kube/config-private
-# Enter your provider-specific login command
 kubectl create namespace private
 kubectl config set-context --current --namespace private
 ~~~
 
-## Step 3: Deploy the FTP server
+**Note:** The login procedure varies by provider.
 
-In Private, use `kubectl apply` to deploy the FTP server.
+## Step 3: Install Skupper on your Kubernetes clusters
+
+Using Skupper on Kubernetes requires the installation of the
+Skupper custom resource definitions (CRDs) and the Skupper
+controller.
+
+For each cluster, use `kubectl apply` with the Skupper
+installation YAML to install the CRDs and controller.
+
+_**Public:**_
+
+~~~ shell
+kubectl apply -f https://skupper.io/v2/install.yaml
+~~~
 
 _**Private:**_
 
 ~~~ shell
-kubectl apply -f server
-~~~
-
-_Sample output:_
-
-~~~ console
-$ kubectl apply -f server
-deployment.apps/ftp-server created
+kubectl apply -f https://skupper.io/v2/install.yaml
 ~~~
 
 ## Step 4: Create your sites
@@ -146,55 +138,44 @@ application are running.  Sites are linked together to form a
 network for your application.  In Kubernetes, a site is associated
 with a namespace.
 
-For each namespace, use `skupper init` to create a site.  This
-deploys the Skupper router and controller.  Then use `skupper
-status` to see the outcome.
+Use the kubectl apply command to declaratively create sites in the kubernetes
+namespaces. This deploys the Skupper router. Then use kubectl get site to see
+the outcome.
 
 **Note:** If you are using Minikube, you need to [start minikube
-tunnel][minikube-tunnel] before you run `skupper init`.
+tunnel][minikube-tunnel] before you configure skupper.
 
 [minikube-tunnel]: https://skupper.io/start/minikube.html#running-minikube-tunnel
 
 _**Public:**_
 
 ~~~ shell
-skupper init
-skupper status
+kubectl apply -f ./public-crs/site.yaml
+kubectl wait --for condition=Ready --timeout=3m site/public
 ~~~
 
 _Sample output:_
 
 ~~~ console
-$ skupper init
-Waiting for LoadBalancer IP or hostname...
-Waiting for status...
-Skupper is now installed in namespace 'public'.  Use 'skupper status' to get more information.
-
-$ skupper status
-Skupper is enabled for namespace "public". It is not connected to any other sites. It has no exposed services.
+$ kubectl wait --for condition=Ready --timeout=3m site/public
+site.skupper.io/public created
+site.skupper.io/public condition met
 ~~~
 
 _**Private:**_
 
 ~~~ shell
-skupper init
-skupper status
+kubectl apply -f ./private-crs/site.yaml
+kubectl wait --for condition=Ready --timeout=3m site/private
 ~~~
 
 _Sample output:_
 
 ~~~ console
-$ skupper init
-Waiting for LoadBalancer IP or hostname...
-Waiting for status...
-Skupper is now installed in namespace 'private'.  Use 'skupper status' to get more information.
-
-$ skupper status
-Skupper is enabled for namespace "private". It is not connected to any other sites. It has no exposed services.
+$ kubectl wait --for condition=Ready --timeout=3m site/private
+site.skupper.io/private created
+site.skupper.io/private condition met
 ~~~
-
-As you move through the steps below, you can use `skupper status` at
-any time to check your progress.
 
 ## Step 5: Link your sites
 
@@ -203,82 +184,103 @@ Links serve as a transport for application connections and
 requests.
 
 Creating a link requires use of two `skupper` commands in
-conjunction, `skupper token create` and `skupper link create`.
+conjunction, `skupper token issue` and `skupper token redeem`.
 
-The `skupper token create` command generates a secret token that
+The `skupper token issue` command generates a secret token that
 signifies permission to create a link.  The token also carries the
-link details.  Then, in a remote site, The `skupper link
-create` command uses the token to create a link to the site
+link details.  Then, in a remote site, The `skupper token
+redeem` command uses the token to create a link to the site
 that generated it.
 
 **Note:** The link token is truly a *secret*.  Anyone who has the
 token can link to your site.  Make sure that only those you trust
 have access to it.
 
-First, use `skupper token create` in site Public to generate the
-token.  Then, use `skupper link create` in site Private to link
-the sites.
+First, use `skupper token issue` in public to generate the
+token.  Then, use `skupper token redeem` in private to link the
+sites.
 
 _**Public:**_
 
 ~~~ shell
-skupper token create ~/secret.token
-~~~
-
-_Sample output:_
-
-~~~ console
-$ skupper token create ~/secret.token
-Token written to ~/secret.token
+skupper token issue ./public.token
 ~~~
 
 _**Private:**_
 
 ~~~ shell
-skupper link create ~/secret.token
-~~~
-
-_Sample output:_
-
-~~~ console
-$ skupper link create ~/secret.token
-Site configured to link to https://10.105.193.154:8081/ed9c37f6-d78a-11ec-a8c7-04421a4c5042 (name=link1)
-Check the status of the link using 'skupper link status'.
+skupper token redeem ./public.token
 ~~~
 
 If your terminal sessions are on different machines, you may need
 to use `scp` or a similar tool to transfer the token securely.  By
 default, tokens expire after a single use or 15 minutes after
-creation.
+creation.  User skupper link status command to check link is in operational state.
 
-## Step 6: Expose the FTP server
+## Step 6: Deploy the FTP server
 
-In Private, use `skupper expose` to expose the FTP server on all
-linked sites.
+In Private, use `kubectl apply` to deploy the FTP server.
 
 _**Private:**_
 
 ~~~ shell
-skupper expose deployment/ftp-server --port 21100 --port 21
+kubectl apply -f private-crs/ftp_service.yaml
 ~~~
 
 _Sample output:_
 
 ~~~ console
-$ skupper expose deployment/ftp-server --port 21100 --port 21
-deployment ftp-server exposed as ftp-server
+$ kubectl apply -f private-crs/ftp_service.yaml
+deployment.apps/ftp-server created
 ~~~
 
-## Step 7: Run the FTP client
+## Step 7: Expose the FTP server to the Virtual Application Network
 
-In Public, use `kubectl run` and the `curl` image to perform FTP
-put and get operations.
+Create Skupper listeners and connectors to expose the FTP service to the public cluster.
+The vsftp app used in this example uses port 21 as the control port, which is utilized
+to send commands to the FTP servier like login, list and get.   Port 21100 is used to 
+transfer data between the FTP client and server.  In private, we will create two connectors. 
+Then, in public, we will create two listeners.
+
+_**Private:**_
+
+~~~ shell
+kubectl apply -f ./private-crs/connector.yaml
+~~~
+
+_Sample output:_
+
+~~~ console
+$ kubectl apply -f ./private-crs/connector.yaml
+connector.skupper.io/ftp-server created
+connector.skupper.io/ftp-passive created
+~~~
+
+_**Public:**_
+
+~~~ shell
+kubectl apply -f ./public-crs/listener.yaml
+~~~
+
+_Sample output:_
+
+~~~ console
+$ kubectl apply -f ./public-crs/listener.yaml
+listener.skupper.io/ftp-server created
+listener.skupper.io/ftp-passive created
+~~~
+
+Status of the listeners and connectors can be verified using `show connector status` and
+`show listener status`.
+
+## Step 8: Run the FTP client for put operation
+
+In Public, use `kubectl run` and the `curl` image to perform FTP put operations.
 
 _**Public:**_
 
 ~~~ shell
 echo "Hello!" | kubectl run ftp-client --stdin --rm --image=docker.io/curlimages/curl --restart=Never -- -s -T - ftp://example:example@ftp-server/greeting
-kubectl run ftp-client --attach --rm --image=docker.io/curlimages/curl --restart=Never -- -s ftp://example:example@ftp-server/greeting
 ~~~
 
 _Sample output:_
@@ -286,28 +288,42 @@ _Sample output:_
 ~~~ console
 $ echo "Hello!" | kubectl run ftp-client --stdin --rm --image=docker.io/curlimages/curl --restart=Never -- -s -T - ftp://example:example@ftp-server/greeting
 pod "ftp-client" deleted
+~~~
 
+## Step 9: Run the FTP client for get operation
+
+In Public, use `kubectl run` and the `curl` image to perform FTP get operations.
+
+_**Public:**_
+
+~~~ shell
+kubectl run ftp-client --attach --rm --image=docker.io/curlimages/curl --restart=Never -- -s ftp://example:example@ftp-server/greeting
+~~~
+
+_Sample output:_
+
+~~~ console
 $ kubectl run ftp-client --attach --rm --image=docker.io/curlimages/curl --restart=Never -- -s ftp://example:example@ftp-server/greeting
 Hello!
 pod "ftp-client" deleted
 ~~~
 
-## Cleaning up
+## Step 10: Cleaning Up
 
-To remove Skupper and the other resources from this exercise, use
+To test remove Skupper and the other resources from this exercise, use
 the following commands.
-
-_**Public:**_
-
-~~~ shell
-skupper delete
-~~~
 
 _**Private:**_
 
 ~~~ shell
-skupper delete
-kubectl delete -f server
+skupper site delete --all
+kubectl delete -f private-crs/ftp-service.yaml
+~~~
+
+_**Public:**_
+
+~~~ shell
+skupper site delete --all
 ~~~
 
 ## Next steps

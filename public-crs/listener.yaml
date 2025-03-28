@@ -1,0 +1,17 @@
+apiVersion: skupper.io/v2alpha1
+kind: Listener
+metadata:
+  name: ftp-server
+spec:
+  routingKey: ftp
+  host: ftp-server
+  port: 21
+---
+apiVersion: skupper.io/v2alpha1
+kind: Listener
+metadata:
+  name: ftp-passive
+spec:
+  routingKey: ftp-passive
+  host: ftp-server
+  port: 21100

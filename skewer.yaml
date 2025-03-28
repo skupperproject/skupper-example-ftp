@@ -24,43 +24,123 @@ sites:
     env:
       KUBECONFIG: ~/.kube/config-private
 steps:
-  - standard: install_the_skupper_command_line_tool
-  - standard: kubernetes/set_up_your_namespaces
+  - standard: platform/install_the_skupper_command_line_tool
+  - standard: platform/access_your_kubernetes_clusters
+  - standard: platform/install_skupper_on_your_kubernetes_clusters
+  - title: Create your sites
+    preamble: |
+      A Skupper _site_ is a location where components of your
+      application are running.  Sites are linked together to form a
+      network for your application.  In Kubernetes, a site is associated
+      with a namespace.
+
+      Use the kubectl apply command to declaratively create sites in the kubernetes
+      namespaces. This deploys the Skupper router. Then use kubectl get site to see
+      the outcome.
+
+      **Note:** If you are using Minikube, you need to [start minikube
+      tunnel][minikube-tunnel] before you configure skupper.
+
+      [minikube-tunnel]: https://skupper.io/start/minikube.html#running-minikube-tunnel
+    commands:
+      public:
+        - run: kubectl apply -f ./public-crs/site.yaml
+        - run: kubectl wait --for condition=Ready --timeout=3m site/public
+          output: |
+            site.skupper.io/public created
+            site.skupper.io/public condition met
+      private:
+        - run: kubectl apply -f ./private-crs/site.yaml
+        - run: kubectl wait --for condition=Ready --timeout=3m site/private
+          output: |
+            site.skupper.io/private created
+            site.skupper.io/private condition met
+  - title: Link your sites
+    preamble: |
+      A Skupper _link_ is a channel for communication between two sites.
+      Links serve as a transport for application connections and
+      requests.
+
+      Creating a link requires use of two `skupper` commands in
+      conjunction, `skupper token issue` and `skupper token redeem`.
+
+      The `skupper token issue` command generates a secret token that
+      signifies permission to create a link.  The token also carries the
+      link details.  Then, in a remote site, The `skupper token
+      redeem` command uses the token to create a link to the site
+      that generated it.
+
+      **Note:** The link token is truly a *secret*.  Anyone who has the
+      token can link to your site.  Make sure that only those you trust
+      have access to it.
+
+      First, use `skupper token issue` in public to generate the
+      token.  Then, use `skupper token redeem` in private to link the
+      sites.
+    commands:
+      public:
+        - run: skupper token issue ./public.token
+      private:
+        - run: skupper token redeem ./public.token
+    postamble: |
+      If your terminal sessions are on different machines, you may need
+      to use `scp` or a similar tool to transfer the token securely.  By
+      default, tokens expire after a single use or 15 minutes after
+      creation.  User skupper link status command to check link is in operational state.
   - title: Deploy the FTP server
     preamble: |
       In Private, use `kubectl apply` to deploy the FTP server.
     commands:
       private:
-        - run: kubectl apply -f server
+        - run: kubectl apply -f ./private-crs/ftp_service.yaml
           output: deployment.apps/ftp-server created
-  - standard: kubernetes/create_your_sites
-  - standard: kubernetes/link_your_sites
-  - title: Expose the FTP server
+  - title: Expose the FTP server to the Virtual Application Network
     preamble: |
-      In Private, use `skupper expose` to expose the FTP server on all
-      linked sites.
+      Create Skupper listeners and connectors to expose the FTP service to the public cluster.
+      The vsftp app used in this example uses port 21 as the control port, which is utilized
+      to send commands to the FTP servier like login, list and get.   Port 21100 is used to 
+      transfer data between the FTP client and server.  In private, we will create two connectors. 
+      Then, in public, we will create two listeners.
     commands:
       private:
         - await_resource: deployment/ftp-server
-        - run: skupper expose deployment/ftp-server --port 21100 --port 21
-          output: deployment ftp-server exposed as ftp-server
-  - title: Run the FTP client
+        - run: kubectl apply -f ./private-crs/connector.yaml
+          output: |
+            connector.skupper.io/ftp-server created
+            connector.skupper.io/ftp-passive created
+      public:
+        - run: kubectl apply -f ./public-crs/listener.yaml
+          output: |
+            listener.skupper.io/ftp-server created
+            listener.skupper.io/ftp-passive created
+    postamble: |
+      Status of the listeners and connectors can be verified using `show connector status` and
+      `show listener status`.
+  - title: Run the FTP client for put operation
     preamble: |
-      In Public, use `kubectl run` and the `curl` image to perform FTP
-      put and get operations.
+      In Public, use `kubectl run` and the `curl` image to perform FTP put operations.  
     commands:
       public:
         - await_resource: service/ftp-server
         - run: echo "Hello!" | kubectl run ftp-client --stdin --rm --image=docker.io/curlimages/curl --restart=Never -- -s -T - ftp://example:example@ftp-server/greeting
           output: pod "ftp-client" deleted
+  - title: Run the FTP client for get operation
+    preamble: |
+      In Public, use `kubectl run` and the `curl` image to perform FTP get operations.  
+    commands:
+      public:
         - run: kubectl run ftp-client --attach --rm --image=docker.io/curlimages/curl --restart=Never -- -s ftp://example:example@ftp-server/greeting
           output: |
             Hello!
             pod "ftp-client" deleted
-  - standard: cleaning_up
+  - title: Cleaning Up
+    preamble: |
+      To test remove Skupper and the other resources from this exercise, use
+      the following commands.
     commands:
-      public:
-        - run: skupper delete
       private:
-        - run: skupper delete
-        - run: kubectl delete -f server
+        - run: skupper site delete --all
+        - run: kubectl delete deployment/ftp-server
+      public:
+        - run: skupper site delete --all
+

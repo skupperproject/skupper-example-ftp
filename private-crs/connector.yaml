@@ -1,0 +1,17 @@
+apiVersion: skupper.io/v2alpha1
+kind: Connector
+metadata:
+  name: ftp-server
+spec:
+  routingKey: ftp
+  port: 21
+  selector: app=ftp-server
+---
+apiVersion: skupper.io/v2alpha1
+kind: Connector
+metadata:
+  name: ftp-passive
+spec:
+  routingKey: ftp-passive
+  port: 21100
+  selector: app=ftp-server
