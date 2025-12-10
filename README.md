@@ -2,7 +2,7 @@
 
 # Accessing an FTP server using Skupper
 
-[![main](https://github.com/lynnemorrison/skupper-example-ftp/actions/workflows/main.yaml/badge.svg)](https://github.com/lynnemorrison/skupper-example-ftp/actions/workflows/main.yaml)
+[![main](https://github.com/skupperproject/skupper-example-ftp/actions/workflows/main.yaml/badge.svg)](https://github.com/skupperproject/skupper-example-ftp/actions/workflows/main.yaml)
 
 #### Securely connect to an FTP server on a remote Kubernetes cluster
 
@@ -203,13 +203,13 @@ sites.
 _**Public:**_
 
 ~~~ shell
-skupper token issue ./public.token
+skupper token issue ~/public.token
 ~~~
 
 _**Private:**_
 
 ~~~ shell
-skupper token redeem ./public.token
+skupper token redeem ~/public.token
 ~~~
 
 If your terminal sessions are on different machines, you may need
@@ -224,13 +224,13 @@ In Private, use `kubectl apply` to deploy the FTP server.
 _**Private:**_
 
 ~~~ shell
-kubectl apply -f private-crs/ftp_service.yaml
+kubectl apply -f ./private-crs/ftp_service.yaml
 ~~~
 
 _Sample output:_
 
 ~~~ console
-$ kubectl apply -f private-crs/ftp_service.yaml
+$ kubectl apply -f ./private-crs/ftp_service.yaml
 deployment.apps/ftp-server created
 ~~~
 
@@ -317,7 +317,7 @@ _**Private:**_
 
 ~~~ shell
 skupper site delete --all
-kubectl delete -f private-crs/ftp-service.yaml
+kubectl delete deployment/ftp-server
 ~~~
 
 _**Public:**_
