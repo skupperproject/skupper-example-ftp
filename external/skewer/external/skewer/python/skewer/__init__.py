@@ -17,4 +17,4 @@
 # under the License.
 #
 
-from skewer.planocommands import *
+from .main import *

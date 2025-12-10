@@ -17,4 +17,8 @@
 # under the License.
 #
 
-from skewer.planocommands import *
+from plano import *
+
+@test
+def hello_again():
+    print("Hello again")
