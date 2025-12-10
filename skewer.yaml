@@ -79,9 +79,9 @@ steps:
       sites.
     commands:
       public:
-        - run: skupper token issue ./public.token
+        - run: skupper token issue ~/public.token
       private:
-        - run: skupper token redeem ./public.token
+        - run: skupper token redeem ~/public.token
     postamble: |
       If your terminal sessions are on different machines, you may need
       to use `scp` or a similar tool to transfer the token securely.  By
